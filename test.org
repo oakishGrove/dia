@@ -1,0 +1,359 @@
+* Class diagram
+#+BEGIN_SRC plantuml :file Class_Card.png
+@startuml
+skinparam packageStyle rectangle
+
+hide circle
+hide stereotypes
+hide methods
+title Class
+
+namespace dbEntities {
+
+    class Worker {
+    }
+
+    class Guest {
+    }
+
+    class Location {
+        ..
+        __
+        ..
+        cards:List<Card>
+        events:List<Event>
+        ..
+    }
+
+    Enum "<<Enum>>\nCardType" as CardType {
+        PERSONNEL,
+        QUEST,
+        TEMPORARY
+    }
+
+    class Event {
+        -id:long
+        -location:Location
+        -purpose:String
+        -participantsAmmount:int
+        -eventsAttendees:List<EventsAttendees>
+          __
+        +Event()
+        +Event(Location)
+          -- setters/getters --
+          +toString():String
+    }
+
+    class "Events_Attendees" as EventsAttendees {
+        -id:long // @IdClass(id.class)
+        -person:Person
+        -evet:Event
+        __
+        +EventsAttendees()
+        +EventsAttendees(Person, Event)
+        -- setters/getters --
+        +toString():String
+    }
+
+
+    class Person {
+        -id:long
+        -firstName:String
+        -midleName:String
+        -lastName:String
+        -email:String
+        -phoneNumber:String
+
+        -eventsAttendees:List<EventsAttendees>
+        -CardReservations:List<CardReservation>
+        __
+        -- setters/getters --
+        +toString():String
+    }
+
+
+    class CardReservation {
+        -id:long
+        -card:Card
+        -person:Person
+        -reservedFrom:Date
+        -reservedTo:Date
+        -reservedByPerson:Worker
+        __
+        +CardReservation()
+        +CardReservation(Card, Person, Event)
+        -- setters/getters --
+        +toString():String
+    }
+
+    class Card {
+        -id:long
+        -serialNumber:long
+        -location:Location
+        -type:CardType
+        -manufactureDate:Date
+        -validUntil:Date
+        -inStock:boolean
+        -cardReservations:List<CardReservation>
+        __
+        -- setters/getters --
+        +toString():String
+    }
+}
+
+
+namespace controller {
+    class CardController {
+        -serice:CardService
+        __
+        +CardController(CardService)
+        +addCard(Card):void
+        +updateCard(long, Card):void
+        +deleteCard(long):void @Response <<____
+        +getCard():Optional<Card>
+        +getCards():List<Card>
+    }
+}
+
+
+namespace dao {
+    class "<<Interface>>\nCardDao" as CardDao {
+        __
+        +addCard(Card):void
+        +updateCard(long, Card):void
+        +deleteCard(long):void @Response <<___
+        +getCard():Optional<Card>
+        +getCards():List<Card>
+    }
+
+    class CardDaoImpl {
+        -db:DB
+        __
+        +CardDaoImpl(DB)
+        +addCard(Card):void
+        +updateCard(long, Card):void
+        +deleteCard(long):void @Response <<____
+        +getCard():Optional<Card>
+        +getCards():List<Card>
+    }
+
+
+    class "<<Interface>>\nPersonDao" as PersonDao {
+        __
+        +addPerson(Person):void
+        +updatePerson(long, Person):void
+        +deletePerson(long):void @Response <<___
+        +getPerson():Optional<Person>
+        +getPersons():List<Person>
+    }
+
+    class PersonDaoImpl {
+        -db:DB
+        __
+        +PersonDaoImpl(DB)
+        +addPerson(Person):void
+        +updatePerson(long, Person):void
+        +deletePerson(long):void @Response <<____
+        +getPerson():Optional<Person>
+        +getPersons():List<Person>
+    }
+
+
+    class "<<Interface>>\nLocationDao" as LocationDao {
+        __
+        +addLocation(Location):void
+        +updateLocation(long, Location):void
+        +deleteLocation(long):void @Response <<___
+        +getLocation():Optional<Location>
+        +getLocations():List<Location>
+    }
+
+    class LocationDaoImpl {
+        -db:DB
+        __
+        +LocationDaoImpl(DB)
+        +addLocation(Location):void
+        +updateLocation(long, Location):void
+        +deleteLocation(long):void @Response <<____
+        +getLocation():Optional<Location>
+        +getLocations():List<Location>
+    }
+
+
+
+    class "<<Interface>>\nEventDao" as EventDao {
+        __
+        +addEvent(Event):void
+        +updateEvent(long, Event):void
+        +deleteEvent(long):void @Response <<___
+        +getEvent():Optional<Event>
+        +getEvents():List<Event>
+    }
+
+    class EventDaoImpl {
+        -db:DB
+        __
+        +EventDaoImpl(DB)
+        +addEvent(Event):void
+        +updateEvent(long, Event):void
+        +deleteEvent(long):void @Response <<____
+        +getEvent():Optional<Event>
+        +getEvents():List<Event>
+    }
+}
+
+
+namespace service {
+    class CardService {
+        -dao:CardDao
+        __
+        +CardService(CardDao)
+        +addCard(Card):void
+        +updateCard(long, Card):void
+        +deleteCard(long):void @Response <<____
+        +getCard():Optional<Card>
+        +getCards():List<Card>
+    }
+}
+
+
+dbEntities.Card - dbEntities.CardType: type
+dbEntities.Location -o dbEntities.Card: location
+dbEntities.Event o- dbEntities.Location: location
+dbEntities.EventsAttendees o- dbEntities.Event: event
+dbEntities.Person -down-o dbEntities.EventsAttendees: person
+dbEntities.CardReservation o-up- dbEntities.Card
+dbEntities.CardReservation o- dbEntities.Person
+dbEntities.Person <|-- dbEntities.Worker
+dbEntities.Person <|-- dbEntities.Guest
+'DB -- dbEntities.Card
+DB -- dbEntities
+
+
+controller.CardController -- service.CardService: service
+service.CardService -- dao.CardDao: dao
+
+dao.CardDao <|.. dao.CardDaoImpl
+dao.CardDaoImpl -- DB: db
+dao.PersonDao <|.. dao.PersonDaoImpl
+dao.PersonDaoImpl -- DB: db
+dao.LocationDao <|.. dao.LocationDaoImpl
+dao.LocationDaoImpl -- DB: db
+dao.EventDao <|.. dao.EventDaoImpl
+dao.EventDaoImpl -- DB: db
+@enduml
+#+END_SRC
+
+
+#+Title:KLAUSIMAI
+* Class
+rodo i kiekviena klase ar i namespace
+* Events_Attendees
+ .@IdClass(id.class), tai ka cia nurodyt reiketu
+* Card_Reservation
+reservedByPerson turi but Worker ar Person
+* Worker, Guest turi turet savo dao, repository?
+* Pavizdizuose radau:
+public interface MenuDao exted CrudRepository<Menu, Integer>
+ir naudoja situos su autowire, nieko daugiau nenaudodami
+
+* TODO PERSON DAO
+* DB
+#+BEGIN_SRC plantuml :file Db_Card.png
+@startuml
+skinparam packageStyle rectangle
+hide circle
+!define Table(name,desc) class name as "desc" << (T,#FFAAAA) >>
+' we use bold for primary key
+' green color for unique
+' and underscore for not_null
+!define primary_key(x) <b>x</b>
+!define unique(x) <color:green>x</color>
+!define not_null(x) <u>x</u>
+
+hide methods
+hide stereotypes
+
+title DB Card
+
+class "<<Enum>>\nCard_type" as card_type {
+    '|= ID|= Type|\n|  1 | PERSONNEL|\n|  2 | QUEST |\n|  3 | TEMPORARY|
+    PERSONNEL
+    GUEST
+    TEMPORARY
+}
+
+entity "Card" as card {
+    <b>ID</b>
+    serial_number
+    location_ID
+    card_type_enum
+    manufacture_date
+    valid_until
+    in_stock
+}
+
+
+entity "Location" as location {
+}
+
+
+entity "Card_Reservation" as reservation {
+    <b>ID</b>
+    card_ID
+    person_ID
+    reserved_from_date
+    reserved_to_date
+    reserved_by_person_id
+}
+
+entity "Person" as person {
+    <b>ID</b>
+    first_name
+    midle_name
+    last_name
+    email
+    phone_number
+}
+
+entity "Worker" as worker {
+    <b>ID</b>
+    person_id
+}
+
+
+entity "Guest" as guest {
+    <b>ID</b>
+    person_id
+}
+
+entity "Event" as event {
+    <b>ID</b>
+    location_id
+    purpose
+    participants_ammount
+}
+
+entity "EventsAttendees" as eventsAttendees {
+    <b>ID</b>
+    event_id
+    person_id
+}
+
+
+card_type ||--|| card
+card }|--|| location
+reservation }|--|| card
+'ar tikrai many to many? person(1) -- reservation(*)?
+person ||--|{ reservation
+person ||--|| worker
+person ||--|| guest
+event }|--|| location
+eventsAttendees }|--|| event
+eventsAttendees }|-left-|{ person
+
+@enduml
+#+END_SRC
+
+* EventsAttendees
+}|--|{ ? ||--|{
