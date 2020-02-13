@@ -4,7 +4,7 @@
 skinparam packageStyle rectangle
 
 hide circle
-hide stereotypes
+'hide stereotypes
 hide methods
 title Class
 
@@ -25,7 +25,7 @@ namespace dbEntities {
         ..
     }
 
-    Enum "<<Enum>>\nCardType" as CardType {
+    Enum "CardType" as CardType << Enum >> {
         PERSONNEL,
         QUEST,
         TEMPORARY
@@ -44,7 +44,7 @@ namespace dbEntities {
           +toString():String
     }
 
-    class "Events_Attendees" as EventsAttendees {
+    class EventsAttendees {
         -id:long // @IdClass(id.class)
         -person:Person
         -evet:Event
@@ -117,7 +117,7 @@ namespace controller {
 
 
 namespace dao {
-    class "<<Interface>>\nCardDao" as CardDao {
+    class "CardDao" as CardDao  << Interface >> {
         __
         +addCard(Card):void
         +updateCard(long, Card):void
@@ -138,7 +138,7 @@ namespace dao {
     }
 
 
-    class "<<Interface>>\nPersonDao" as PersonDao {
+    class "PersonDao" as PersonDao << Interface >> {
         __
         +addPerson(Person):void
         +updatePerson(long, Person):void
@@ -159,7 +159,7 @@ namespace dao {
     }
 
 
-    class "<<Interface>>\nLocationDao" as LocationDao {
+    class "LocationDao" as LocationDao << Interface >> {
         __
         +addLocation(Location):void
         +updateLocation(long, Location):void
@@ -180,11 +180,10 @@ namespace dao {
     }
 
 
-
-    class "<<Interface>>\nEventDao" as EventDao {
+    class EventDao << Interface >> {
         __
         +addEvent(Event):void
-        +updateEvent(long, Event):void
+        +updateEvenGt(long, Event):void
         +deleteEvent(long):void @Response <<___
         +getEvent():Optional<Event>
         +getEvents():List<Event>
@@ -244,8 +243,12 @@ dao.EventDaoImpl -- DB: db
 @enduml
 #+END_SRC
 
+#+RESULTS:
+[[file:Class_Card.png]]
 
-#+Title:KLAUSIMAI
+
+
+
 * Class
 rodo i kiekviena klase ar i namespace
 * Events_Attendees
@@ -272,42 +275,55 @@ hide circle
 !define not_null(x) <u>x</u>
 
 hide methods
-hide stereotypes
+'hide stereotypes
 
-title DB Card
+title DB
 
-class "<<Enum>>\nCard_type" as card_type {
+entity CardType << Enum >> {
     '|= ID|= Type|\n|  1 | PERSONNEL|\n|  2 | QUEST |\n|  3 | TEMPORARY|
     PERSONNEL
     GUEST
-    TEMPORARY
+    --TEMPORARY--
 }
 
-entity "Card" as card {
+entity Card {
     <b>ID</b>
     serial_number
     location_ID
     card_type_enum
     manufacture_date
     valid_until
-    in_stock
 }
 
 
-entity "Location" as location {
+entity Location {
+    <b>ID</b>
+    name
+    country
+    city
+    address
+    type
+    manager_worker_id
+    phone_number
 }
 
 
-entity "Card_Reservation" as reservation {
+entity LocationType << Enum >> {
+    OWNED_OFFISE
+    OTHER
+}
+
+entity GuestCardReservation {
     <b>ID</b>
     card_ID
-    person_ID
+    guest_ID
     reserved_from_date
     reserved_to_date
     reserved_by_person_id
+    reservation_purpose
 }
 
-entity "Person" as person {
+entity Person {
     <b>ID</b>
     first_name
     midle_name
@@ -316,44 +332,120 @@ entity "Person" as person {
     phone_number
 }
 
-entity "Worker" as worker {
+entity Worker {
+    <b>ID</b>
+    person_id
+    card_id
+}
+
+
+entity Guest {
     <b>ID</b>
     person_id
 }
 
-
-entity "Guest" as guest {
+entity Event {
     <b>ID</b>
-    person_id
-}
-
-entity "Event" as event {
-    <b>ID</b>
+    name
     location_id
-    purpose
+    description
     participants_ammount
+    start_date_time
+    end_date_time
+    event_owner_id
 }
 
-entity "EventsAttendees" as eventsAttendees {
+entity EventsAttendees {
     <b>ID</b>
     event_id
     person_id
 }
 
+'note top of EventsAttendees : risasi su person ar card
 
-card_type ||--|| card
-card }|--|| location
-reservation }|--|| card
+Guest -[hidden] Worker
+
+
+CardType ||-up-|| Card
+Card }|--|| Location
+GuestCardReservation }|-right-|| Card
 'ar tikrai many to many? person(1) -- reservation(*)?
-person ||--|{ reservation
-person ||--|| worker
-person ||--|| guest
-event }|--|| location
-eventsAttendees }|--|| event
-eventsAttendees }|-left-|{ person
+Person ||--|| Worker
+Guest ||-up-|| Person
+GuestCardReservation }|-right-|| Guest
+Event }|--|| Location
+EventsAttendees }|--|| Event
+EventsAttendees }|-left-|{ Person
+Worker ||--|| Card
+
+LocationType -right- Location
+'notes
+'note "many to many or many to one" as n1
+'Person .up. n1
+'n1 .. EventsAttendees
 
 @enduml
 #+END_SRC
 
-* EventsAttendees
-}|--|{ ? ||--|{
+#+RESULTS:
+[[file:Db_Card.png]]
+
+
+* Use Case
+#+BEGIN_SRC plantuml :file use_case.png
+@startuml
+skinparam packageStyle rectangle
+hide circle
+!define Table(name,desc) class name as "desc" << (T,#FFAAAA) >>
+' we use bold for primary key
+' green color for unique
+' and underscore for not_null
+!define primary_key(x) <b>x</b>
+!define unique(x) <color:green>x</color>
+!define not_null(x) <u>x</u>
+
+hide methods
+hide stereotypes
+
+title Use Case
+'left to right direction
+
+:SystemUser: as sys_usr
+rectangle System {
+    sys_usr -- (delete Event)
+    sys_usr -- (update Event)
+    sys_usr -- (get Event list)
+}
+
+rectangle ce {
+    (Enter start date)
+    (Enter end date)
+    (Enter person count)
+}
+
+
+usecase event_data as "Fill:
+    Date(Start/End)
+    Location
+    Atenndess Count
+    Purpose
+"
+
+note top of event_data
+    Date entered by hand/clicking on calendar
+    Location from dropbox
+    atenndess, purpose textbox
+end note
+
+(create Event) -> (event_data)
+(event_data) -> (Go back to event view)
+(Go back to event view) -> (asd)
+@enduml
+#+END_SRC
+
+* Scenario
+** Create event
+Press +
+Fill the form(fields)
+Press add
+** From grid pick event
