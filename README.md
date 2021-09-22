@@ -1,4 +1,4 @@
 # dia
-command line practice directory
+uml for exadel internship
 
 compiled at planttext.com
